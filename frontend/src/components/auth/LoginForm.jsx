@@ -82,7 +82,7 @@ export default function LoginForm() {
       className="max-w-md w-full mx-auto space-y-6 bg-white p-6 rounded-4xl shadow-2xl"
     >
       <h2 className="text-xl font-semibold">{t('loginTitle')}</h2>
-      <p className="text-gray-500">{t('loginDesc')}</p>
+      {/* <p className="text-gray-500">{t('loginDesc')}</p> */}
 
       <div className="space-y-2">
         <Label>{t('emailLabel')}</Label>
