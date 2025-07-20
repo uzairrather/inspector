@@ -13,7 +13,7 @@ export default function ProjectCard({ project, isAdmin, onFavorite, onDone, onRe
 
   return (
     <div
-      className="border rounded-2xl p-4 shadow-md bg-white dark:bg-zinc-800 relative hover:cursor-pointer"
+      className="border rounded-2xl p-4 shadow-md bg-blue-200 dark:bg-zinc-800 relative hover:cursor-pointer"
       onClick={() => navigate(`/subproject/${project._id}`)}
     >
       <div className="flex justify-between items-start">
@@ -65,7 +65,7 @@ export default function ProjectCard({ project, isAdmin, onFavorite, onDone, onRe
             e.stopPropagation(); // Prevent card click
             onDone(project._id);
           }}
-          className="text-sm"
+          className="text-sm bg-blue-500 text-white"
         >
           {project.isDone ? 'Undo Done' : 'Mark Done'}
         </Button>

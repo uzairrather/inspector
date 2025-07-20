@@ -92,11 +92,11 @@ export default function Header() {
 
 
   return (
-    <header className="w-full px-4 sm:px-4 md:px-4 lg:px-10 py-4 border-b shadow-sm bg-blue-100">
+    <header className="w-full px-4 sm:px-4 md:px-4 lg:px-10 py-4 border-b shadow-sm bg-teal-400">
       <div className="max-w-full flex justify-between items-center relative">
         {/* Left: Title */}
         <h1 className="text-2xl font-bold whitespace-nowrap">
-          {t("Asset Inspecto")}
+          {t(" Inspector")}
         </h1>
 
         {/* Center: Search Bar */}

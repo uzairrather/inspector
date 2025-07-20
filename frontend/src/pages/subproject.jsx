@@ -158,7 +158,7 @@ const SubProject = () => {
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-[#f4f6ff] flex flex-col relative px-4 sm:px-6 md:px-8 lg:px-6">
+    <div className="min-h-screen bg-[#f4f6ff] flex flex-col relative px-4 sm:px-6 md:px-8 lg:px-6 bg-gradient-to-r from-slate-800 to-teal-500">
       <main className="flex-1 p-4 pb-28 sm:pb-8">
         <div className="mb-6">
           <Link
@@ -167,12 +167,12 @@ const SubProject = () => {
           >
             <Home size={18} /> All Projects
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 mt-1 break-words">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mt-1 break-words">
             {project?.name || "Project"}
           </h1>
 
           {breadcrumbTrail.length > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-1 text-sm text-gray-700 font-medium">
+            <div className="mt-2 flex flex-wrap  items-center gap-1 text-sm text-gray-700 font-medium">
               {breadcrumbTrail.map((folder, idx) => (
                 <span key={folder._id} className="flex items-center gap-1">
                   {idx !== 0 && <ChevronRight size={14} />}
@@ -191,7 +191,7 @@ const SubProject = () => {
         </div>
 
         {folderId && (
-          <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 shadow-sm mb-4">
+          <div className="bg-blue-200  border border-gray-200 rounded-xl px-6 py-4 shadow-sm mb-4">
             <button
               onClick={() => navigate(`/subproject/${id}`)}
               className="text-xl font-bold text-zinc-800 hover:text-blue-600 focus:outline-none"
@@ -202,19 +202,19 @@ const SubProject = () => {
         )}
 
         {/* Folders */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
-          <h2 className="text-xl font-bold text-zinc-900 mb-4">All Folders</h2>
+        <div className=" border border-gray-200 rounded-xl p-6 shadow-sm mb-6 bg-gradient-to-r from-slate-800 to-teal-500">
+          <h2 className="text-xl font-bold text-white mb-4 ">All Folders</h2>
           {folders.length === 0 ? (
             <div className="text-gray-500">No folders found.</div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <div className=" grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
               {folders.map((folder) => (
                 <div
                   key={folder._id}
                   onClick={() => {
                     navigate(`/subproject/${id}?folderId=${folder._id}`);
                   }}
-                  className="cursor-pointer bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition duration-300 relative flex flex-col justify-between"
+                  className="cursor-pointer bg-blue-200 rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition duration-300 relative flex flex-col justify-between"
                 >
                   <div className="absolute top-3 left-3">
                     <div className="relative">
@@ -257,8 +257,8 @@ const SubProject = () => {
         </div>
 
         {assets.data?.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-zinc-900 mb-4">All Assets</h2>
+          <div className="bg-gradient-to-r from-slate-800 to-teal-500 border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-white  mb-4">All Assets</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {assets.data.map((asset) => (
                 <div
