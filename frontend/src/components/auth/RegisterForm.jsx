@@ -83,7 +83,7 @@ export default function RegisterForm() {
       className="max-w-md w-full mx-auto space-y-6 p-6 bg-white dark:bg-zinc-900 rounded-4xl shadow-2xl"
     >
       <h2 className="text-xl font-semibold">{t('signupTitle')}</h2>
-      <p className="text-gray-500 dark:text-gray-300">{t('signupDesc')}</p>
+      {/* <p className="text-gray-500 dark:text-gray-300">{t('signupDesc')}</p> */}
 
       <div className="space-y-2">
         <Label>{t('fullName') || 'Full Name'}</Label>
