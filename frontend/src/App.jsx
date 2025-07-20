@@ -6,16 +6,16 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import CompanySelection from './components/CompanySelection';
 import DashboardPage from './pages/dashboard';
 import SubProject from './pages/subproject';
-import AssetDetails from './components/AssetDetails'; // ✅ NEW IMPORT
+import AssetDetails from './components/AssetDetails';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Header />
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-
         <Route
           path="/select-company"
           element={
@@ -24,7 +24,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/dashboard"
           element={
@@ -33,7 +32,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/subproject/:id"
           element={
@@ -42,7 +40,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/asset/:assetId"
           element={
