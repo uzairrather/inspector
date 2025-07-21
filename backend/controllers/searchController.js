@@ -19,17 +19,16 @@ exports.search = async (req, res) => {
       return res.status(400).json({ message: "Missing query or context" });
     }
 
-    console.log(`🤖 AI Search "${query}" in context "${context}"`);
     const queryEmbedding = await generateEmbedding(query);
-
     let results = [];
 
     if (context === "project") {
       const allProjects = await Project.find({ company: req.user.company, embedding: { $ne: [] } });
       results = allProjects.map(p => ({
         data: p,
-        score: cosineSimilarity(queryEmbedding, p.embedding)
-      }));
+        score: cosineSimilarity(queryEmbedding, p.embedding),
+        nameMatch: p.name.toLowerCase().includes(query.toLowerCase())
+      })).filter(r => r.score > 0.6 || r.nameMatch);
     }
 
     if (context === "folder") {
@@ -41,8 +40,9 @@ exports.search = async (req, res) => {
       const allFolders = await Folder.find(filter);
       results = allFolders.map(f => ({
         data: f,
-        score: cosineSimilarity(queryEmbedding, f.embedding)
-      }));
+        score: cosineSimilarity(queryEmbedding, f.embedding),
+        nameMatch: f.name.toLowerCase().includes(query.toLowerCase())
+      })).filter(r => r.score > 0.6 || r.nameMatch);
     }
 
     if (context === "asset") {
@@ -57,22 +57,25 @@ exports.search = async (req, res) => {
       const allAssets = await Asset.find(filter);
       results = allAssets.map(a => ({
         data: a,
-        score: cosineSimilarity(queryEmbedding, a.embedding)
-      }));
+        score: cosineSimilarity(queryEmbedding, a.embedding),
+        nameMatch: a.name.toLowerCase().includes(query.toLowerCase())
+      })).filter(r => r.score > 0.6 || r.nameMatch);
     }
 
-    // Sort results by score
     results.sort((a, b) => b.score - a.score);
 
     res.json({
       type: context,
       results: results.map(r => ({
         ...r.data.toObject(),
-        similarityScore: r.score.toFixed(3), // Optional
+        similarityScore: r.score.toFixed(3),
       })),
     });
+
   } catch (error) {
     console.error("❌ AI Search error:", error);
     res.status(500).json({ message: "Server error during AI search" });
   }
 };
+
+
