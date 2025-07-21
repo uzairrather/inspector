@@ -143,14 +143,37 @@ export default function DashboardPage() {
             </button>
           </div>
           <ul className="divide-y divide-gray-200 dark:divide-zinc-700">
-            {searchResults.map((item) => (
-              <li key={item._id} className="py-2">
-                <div className="font-medium text-blue-700 dark:text-blue-300">
-                  {item.name || item.assetName}
-                </div>
-                <div className="text-xs text-gray-500">ID: {item._id}</div>
-              </li>
-            ))}
+           {searchResults.map((item) => {
+  let type = "unknown";
+
+  if (item.assetName) type = "asset";
+  else if (item.project && item.parent !== undefined) type = "folder";
+  else type = "project";
+
+  const handleClick = () => {
+    if (type === "folder") {
+      navigate(`/subproject/${item.project}?folderId=${item._id}`);
+    } else if (type === "asset") {
+      navigate(`/asset/${item._id}`);
+    } else if (type === "project") {
+      navigate(`/subproject/${item._id}`);
+    }
+  };
+
+  return (
+    <li
+      key={item._id}
+      onClick={handleClick}
+      className="py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700 px-2 rounded"
+    >
+      <div className="font-medium text-blue-700 dark:text-blue-300 underline">
+        {item.name || item.assetName}
+      </div>
+      <div className="text-xs text-gray-500">ID: {item._id}</div>
+    </li>
+  );
+})}
+
           </ul>
         </div>
       ) : (
