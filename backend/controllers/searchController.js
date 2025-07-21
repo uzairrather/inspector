@@ -2,6 +2,14 @@ const mongoose = require("mongoose");
 const Project = require("../models/Project");
 const Folder = require("../models/Folder");
 const Asset = require("../models/Asset");
+const { generateEmbedding } = require("../utils/embeddingUtils"); // ✅ NEW
+
+function cosineSimilarity(vec1, vec2) {
+  const dot = vec1.reduce((sum, v, i) => sum + v * vec2[i], 0);
+  const mag1 = Math.sqrt(vec1.reduce((sum, v) => sum + v ** 2, 0));
+  const mag2 = Math.sqrt(vec2.reduce((sum, v) => sum + v ** 2, 0));
+  return dot / (mag1 * mag2);
+}
 
 exports.search = async (req, res) => {
   try {
@@ -11,72 +19,60 @@ exports.search = async (req, res) => {
       return res.status(400).json({ message: "Missing query or context" });
     }
 
-    const regex = new RegExp(query, "i"); // case-insensitive match
+    console.log(`🤖 AI Search "${query}" in context "${context}"`);
+    const queryEmbedding = await generateEmbedding(query);
+
     let results = [];
 
-    console.log(`🔍 Searching "${query}" in context "${context}"`);
-    console.log(`📦 projectId: ${projectId}, folderId: ${folderId}`);
-
     if (context === "project") {
-      results = await Project.find({ name: regex, company: req.user.company });
-      console.log("✅ Matching projects:", results);
-      return res.json({ type: "project", results });
+      const allProjects = await Project.find({ company: req.user.company, embedding: { $ne: [] } });
+      results = allProjects.map(p => ({
+        data: p,
+        score: cosineSimilarity(queryEmbedding, p.embedding)
+      }));
     }
 
     if (context === "folder") {
-      if (!projectId)
-        return res.status(400).json({ message: "Missing projectId" });
+      if (!projectId) return res.status(400).json({ message: "Missing projectId" });
 
-      const queryObj = {
-        name: regex,
-        project: new mongoose.Types.ObjectId(projectId),
-      };
+      const filter = { project: new mongoose.Types.ObjectId(projectId), embedding: { $ne: [] } };
+      if (folderId) filter.parent = new mongoose.Types.ObjectId(folderId);
 
-      // Optional: limit to current folder
-      if (folderId) {
-        queryObj.parent = new mongoose.Types.ObjectId(folderId);
-      }
-
-      console.log("📁 Folder query:", queryObj);
-
-      results = await Folder.find(queryObj);
-
-      console.log("✅ Matching folders:", results);
-      return res.json({ type: "folder", results });
+      const allFolders = await Folder.find(filter);
+      results = allFolders.map(f => ({
+        data: f,
+        score: cosineSimilarity(queryEmbedding, f.embedding)
+      }));
     }
 
     if (context === "asset") {
-      if (!projectId)
-        return res.status(400).json({ message: "Missing projectId" });
+      if (!projectId) return res.status(400).json({ message: "Missing projectId" });
 
-      const baseFilter = {
-        name: regex,
-        project: new mongoose.Types.ObjectId(projectId),
+      const filter = {
+        projectId: new mongoose.Types.ObjectId(projectId),
+        embedding: { $ne: [] },
       };
+      if (folderId) filter.folderId = new mongoose.Types.ObjectId(folderId);
 
-      // 🔍 Try folder-scoped first
-      if (folderId) {
-        const folderFilter = {
-          ...baseFilter,
-          folder: new mongoose.Types.ObjectId(folderId),
-        };
-        console.log("🎯 Trying asset filter in folder:", folderFilter);
-        results = await Asset.find(folderFilter);
-      }
-
-      // 🔁 Fallback to project-level asset search if nothing found
-      if (!results.length) {
-        console.log("🔁 No folder result. Trying full project asset search...");
-        results = await Asset.find(baseFilter);
-      }
-
-      console.log("✅ Matching assets:", results);
-      return res.json({ type: "asset", results });
+      const allAssets = await Asset.find(filter);
+      results = allAssets.map(a => ({
+        data: a,
+        score: cosineSimilarity(queryEmbedding, a.embedding)
+      }));
     }
 
-    return res.status(400).json({ message: "Invalid context value" });
+    // Sort results by score
+    results.sort((a, b) => b.score - a.score);
+
+    res.json({
+      type: context,
+      results: results.map(r => ({
+        ...r.data.toObject(),
+        similarityScore: r.score.toFixed(3), // Optional
+      })),
+    });
   } catch (error) {
-    console.error("❌ Search error:", error);
-    res.status(500).json({ message: "Server error during search" });
+    console.error("❌ AI Search error:", error);
+    res.status(500).json({ message: "Server error during AI search" });
   }
 };

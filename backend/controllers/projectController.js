@@ -3,17 +3,22 @@ const User = require('../models/User');
 const Project = require('../models/Project');
 const Folder = require('../models/Folder');
 const Asset = require('../models/Asset');
+const { generateEmbedding } = require('../utils/embeddingUtils'); // ✅ New import
 
 // ✅ Create project
 exports.createProject = async (req, res) => {
   try {
     const { name, assignedUsers } = req.body;
 
+    // ✅ Generate embedding from project name
+    const embedding = await generateEmbedding(name);
+
     const project = await Project.create({
       name,
       company: req.user.company,
       createdBy: req.user._id,
       assignedUsers: assignedUsers,
+      embedding, // ✅ Save embedding
     });
 
     res.status(201).json({ project });
@@ -44,19 +49,11 @@ const countAssetsRecursively = async (projectId) => {
   const subfolderIds = await collectSubfolderIds(folderIds);
   const allFolderIds = [...new Set([...folderIds, ...subfolderIds])];
 
-  // // ✅ DEBUG LOGS
-  // console.log("📂 Project ID:", projectId);
-  // console.log("📁 Folder IDs:", allFolderIds);
-
   const folderedCount = await Asset.countDocuments({ folderId: { $in: allFolderIds } });
   const rootCount = await Asset.countDocuments({ projectId, folderId: null });
 
-  // console.log("📦 Foldered assets:", folderedCount);
-  // console.log("📦 Root assets:", rootCount);
-
   return folderedCount + rootCount;
 };
-
 
 // ✅ Get projects for the logged-in user's company
 exports.getProjectsForCompany = async (req, res) => {
@@ -76,7 +73,6 @@ exports.getProjectsForCompany = async (req, res) => {
 
     const role = user.roles.includes('admin') ? 'admin' : user.roles[0] || 'viewer';
 
-    // ✅ Inject assetCount into each project
     const projectsWithCounts = await Promise.all(
       projects.map(async (project) => {
         const assetCount = await countAssetsRecursively(project._id);

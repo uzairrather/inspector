@@ -12,7 +12,12 @@ const assetSchema = new mongoose.Schema({
   voiceNoteUrl: String, // ✅ Cloudinary voice file URL
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+  //  New: AI vector embedding for semantic search
+  embedding: {
+    type: [Number],
+    default: [],
+  },
 }, { timestamps: true });
 
-// ✅ Fix: export the model
 module.exports = mongoose.model('Asset', assetSchema);

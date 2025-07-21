@@ -1,6 +1,7 @@
 const Asset = require('../models/Asset');
 const Folder = require('../models/Folder');
 const mongoose = require("mongoose");
+const { generateEmbedding } = require('../utils/embeddingUtils'); // ✅ New import
 
 // ✅ Create a new asset (photo, voice, descriptions, folder or project)
 exports.createAsset = async (req, res) => {
@@ -36,6 +37,10 @@ exports.createAsset = async (req, res) => {
       resolvedProjectId = folder.project;
     }
 
+    // ✅ Create embedding text and generate vector
+    const embeddingText = `${name} ${textDescription || ''} ${voiceToText || ''}`;
+    const embedding = await generateEmbedding(embeddingText);
+
     const asset = await Asset.create({
       name,
       folderId: folderId || null,
@@ -46,6 +51,7 @@ exports.createAsset = async (req, res) => {
       voiceToText,
       textDescription,
       createdBy: req.user._id,
+      embedding, // ✅ Store AI vector
     });
 
     res.status(201).json({ data: asset });
@@ -72,7 +78,6 @@ exports.getAssetsByFolder = async (req, res) => {
   }
 };
 
-
 // ✅ Get all assets in a project root (no folders)
 exports.getAssetsByProject = async (req, res) => {
   try {
@@ -91,7 +96,6 @@ exports.getAssetsByProject = async (req, res) => {
   }
 };
 
-
 // ✅ Sync multiple offline assets (PWA support)
 exports.syncOfflineAssets = async (req, res) => {
   try {
@@ -104,11 +108,16 @@ exports.syncOfflineAssets = async (req, res) => {
     const results = [];
 
     for (let item of assets) {
+      const embeddingText = `${item.name} ${item.textDescription || ''} ${item.voiceToText || ''}`;
+      const embedding = await generateEmbedding(embeddingText);
+
       const created = await Asset.create({
         ...item,
         company: req.user.company,
         createdBy: req.user._id,
+        embedding,
       });
+
       results.push(created);
     }
 

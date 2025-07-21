@@ -1,5 +1,3 @@
-// Project.js
-
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
@@ -36,6 +34,12 @@ const projectSchema = new mongoose.Schema({
 
   doneAt: {
     type: Date,
+  },
+
+  // ✅ New: AI vector embedding for semantic search
+  embedding: {
+    type: [Number],
+    default: [],
   },
 }, { timestamps: true });
 

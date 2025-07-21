@@ -11,42 +11,43 @@ import useProjectTabs from "@/hooks/useProjectTabs";
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState([]);
+  const [searchResults, setSearchResults] = useState(null);
   const [selectedTab, setSelectedTab] = useState(TABS.NEW);
   const [showModal, setShowModal] = useState(false);
   const [company, setCompany] = useState(null);
   const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [resetSignal, setResetSignal] = useState(false);
 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const selectedCompanyId = localStorage.getItem("selectedCompanyId");
-  const filteredProjects = projects; //  bypass filtering temporarily
 
-  //  Move fetchProjects outside useEffect so we can reuse it
   const fetchProjects = async () => {
     try {
+      setLoading(true);
       const res = await fetch(
         `${API_BASE_URL}/api/projects/company/${selectedCompanyId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       const data = await res.json();
       if (res.ok) {
         setProjects(data.projects || []);
         setCompany(data.company || "");
         setRole(data.role || "");
-        console.log(" Projects fetched:", data.projects);
       } else {
         toast.error(data.message || "Failed to fetch projects.");
       }
     } catch (err) {
       console.error(err);
       toast.error("Error fetching data.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  //  Initial check and fetch
   useEffect(() => {
     if (!token) {
       toast.error("Unauthorized. Please log in.");
@@ -63,15 +64,54 @@ export default function DashboardPage() {
     fetchProjects();
   }, [navigate, selectedCompanyId, token]);
 
-  //  Re-fetch from backend after project creation
   const handleProjectCreated = () => {
-    fetchProjects(); // ⬅️ refresh latest projects
+    fetchProjects();
     setSelectedTab(TABS.NEW);
   };
 
+  const handleSearch = async (query, context) => {
+    try {
+      let url = `${API_BASE_URL}/api/search?query=${encodeURIComponent(
+        query
+      )}&context=${context}`;
+
+      if (
+        (context === "folder" || context === "asset") &&
+        projects.length > 0
+      ) {
+        const selectedProjectId = projects[0]._id;
+        url += `&projectId=${selectedProjectId}`;
+      }
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSearchResults(data.results || []);
+        setResetSignal((prev) => !prev); // trigger search bar reset
+        toast.success(`Found ${data.results.length} ${context}s`);
+      } else {
+        toast.error(data.message || "Search failed");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error during AI search.");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-r from-slate-800 to-teal-500 dark:bg-zinc-900 p-4 md:p-8 ">
-      <DashboardHeader company={company} role={role} />
+    <div className="min-h-screen bg-gradient-to-r from-slate-800 to-teal-500 dark:bg-zinc-900 p-4 md:p-8">
+      <DashboardHeader
+        company={company}
+        role={role}
+        onSearch={handleSearch}
+        resetSignal={resetSignal}
+      />
+
       <div className="flex items-center justify-between mt-6 mb-4">
         <ProjectTabs selected={selectedTab} onChange={setSelectedTab} />
         {role === "admin" && (
@@ -84,57 +124,86 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <ProjectGrid
-        projects={projects}
-        isAdmin={role === "admin"}
-        selectedTab={selectedTab} //  Pass this
-        setProjects={setProjects} //  Needed for toggling
-        onFavorite={async (projectId) => {
-          //  Updated handler
-          try {
-            const res = await fetch(
-              `${API_BASE_URL}/api/projects/${projectId}/favorite`,
-              {
-                method: "PATCH",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
+      {/* ✅ Loading State */}
+      {loading ? (
+        <div className="text-center text-white py-12 text-lg font-medium">
+          Loading projects...
+        </div>
+      ) : searchResults ? (
+        <div className="bg-white dark:bg-zinc-800 p-4 rounded-lg shadow">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+              Search Results
+            </h2>
+            <button
+              onClick={() => setSearchResults(null)}
+              className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-zinc-700 dark:text-blue-300 dark:hover:bg-zinc-600"
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+          <ul className="divide-y divide-gray-200 dark:divide-zinc-700">
+            {searchResults.map((item) => (
+              <li key={item._id} className="py-2">
+                <div className="font-medium text-blue-700 dark:text-blue-300">
+                  {item.name || item.assetName}
+                </div>
+                <div className="text-xs text-gray-500">ID: {item._id}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <ProjectGrid
+          projects={projects}
+          isAdmin={role === "admin"}
+          selectedTab={selectedTab}
+          setProjects={setProjects}
+          onFavorite={async (projectId) => {
+            try {
+              const res = await fetch(
+                `${API_BASE_URL}/api/projects/${projectId}/favorite`,
+                {
+                  method: "PATCH",
+                  headers: { Authorization: `Bearer ${token}` },
+                }
+              );
+              if (!res.ok) throw new Error("Failed to toggle favorite");
 
-            if (!res.ok) throw new Error("Failed to toggle favorite");
-
+              setProjects((prev) =>
+                prev.map((p) =>
+                  p._id === projectId ? { ...p, isFavorite: !p.isFavorite } : p
+                )
+              );
+            } catch (err) {
+              console.error(err);
+              toast.error("Failed to update favorite");
+            }
+          }}
+          onDone={(projectId) => {
             setProjects((prev) =>
               prev.map((p) =>
-                p._id === projectId ? { ...p, isFavorite: !p.isFavorite } : p
+                p._id === projectId ? { ...p, isDone: !p.isDone } : p
               )
             );
-          } catch (err) {
-            console.error(err);
-            toast.error("Failed to update favorite");
-          }
-        }}
-        onDone={(projectId) => {
-          setProjects((prev) =>
-            prev.map((p) =>
-              p._id === projectId ? { ...p, isDone: !p.isDone } : p
-            )
-          );
-        }}
-        onRename={(updatedProject) => {
-          setProjects((prev) =>
-            prev.map((p) => (p._id === updatedProject._id ? updatedProject : p))
-          );
-        }}
-        onDelete={(projectId) => {
-          setProjects((prev) => prev.filter((p) => p._id !== projectId));
-        }}
-      />
+          }}
+          onRename={(updatedProject) => {
+            setProjects((prev) =>
+              prev.map((p) =>
+                p._id === updatedProject._id ? updatedProject : p
+              )
+            );
+          }}
+          onDelete={(projectId) => {
+            setProjects((prev) => prev.filter((p) => p._id !== projectId));
+          }}
+        />
+      )}
 
       {showModal && (
         <CreateProjectModal
           onClose={() => setShowModal(false)}
-          onCreate={handleProjectCreated} // ✅ now re-fetches on create
+          onCreate={handleProjectCreated}
         />
       )}
     </div>

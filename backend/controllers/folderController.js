@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Folder = require("../models/Folder");
 const Asset = require("../models/Asset"); // ✅ required for asset counting
+const { generateEmbedding } = require("../utils/embeddingUtils"); // ✅ New
 
 exports.createFolder = async (req, res) => {
   try {
@@ -18,12 +19,16 @@ exports.createFolder = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized: User not found" });
     }
 
+    // ✅ Generate semantic vector from folder name
+    const embedding = await generateEmbedding(name);
+
     const folder = await Folder.create({
       name,
       project: new mongoose.Types.ObjectId(project),
       company: new mongoose.Types.ObjectId(company),
       parent: parent ? new mongoose.Types.ObjectId(parent) : null,
       createdBy: req.user._id,
+      embedding, // ✅ Save embedding
     });
 
     res.status(201).json(folder);
@@ -109,10 +114,6 @@ exports.getAssetCountForFolderWithSubfolders = async (req, res) => {
 
     const subfolderIds = await collectSubfolderIds(rootFolderObjectId);
     const allFolderIds = [rootFolderObjectId, ...subfolderIds];
-
-    // console.log("📁 Folder ID:", rootFolderObjectId.toString());
-    // console.log("📂 Subfolder IDs:", subfolderIds.map((id) => id.toString()));
-    // console.log("📦 All folder IDs for count:", allFolderIds.map((id) => id.toString()));
 
     const assetCount = await Asset.countDocuments({
       folderId: { $in: allFolderIds },

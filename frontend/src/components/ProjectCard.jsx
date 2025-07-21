@@ -5,7 +5,7 @@ import { MoreVertical, Star } from 'lucide-react';
 
 export default function ProjectCard({ project, isAdmin, onFavorite, onDone, onRename }) {
   const navigate = useNavigate();
-  console.log(project)
+  // console.log(project)
   const assetCount = project.assetCount || 0; // ✅ Fixed this line
 
   // console.log("ProjectCard project prop:", project);
