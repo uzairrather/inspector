@@ -87,10 +87,10 @@ export default function DashboardPage() {
       <ProjectGrid
         projects={projects}
         isAdmin={role === "admin"}
-        selectedTab={selectedTab} // ✅ Pass this
-        setProjects={setProjects} // ✅ Needed for toggling
+        selectedTab={selectedTab} //  Pass this
+        setProjects={setProjects} //  Needed for toggling
         onFavorite={async (projectId) => {
-          // ✅ Updated handler
+          //  Updated handler
           try {
             const res = await fetch(
               `${API_BASE_URL}/api/projects/${projectId}/favorite`,

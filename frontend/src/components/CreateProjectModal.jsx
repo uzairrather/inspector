@@ -53,7 +53,7 @@ export default function CreateProjectModal({ onCreate }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="ml-auto">+ New Project</Button>
+        <Button className=" bg-green-500 text-white ">+ New Project</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogTitle>Create New Project</DialogTitle>
